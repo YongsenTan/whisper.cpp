@@ -79,10 +79,10 @@ bool audio_async::init(int capture_id, int sample_rate) {
 }
 
 bool audio_async::resume() {
-    if (!m_dev_id_in) {
-        fprintf(stderr, "%s: no audio device to resume!\n", __func__);
-        return false;
-    }
+    // if (!m_dev_id_in) {
+    //     fprintf(stderr, "%s: no audio device to resume!\n", __func__);
+    //     return false;
+    // }
 
     if (m_running) {
         fprintf(stderr, "%s: already running!\n", __func__);
@@ -168,10 +168,10 @@ void audio_async::callback(uint8_t * stream, int len) {
 }
 
 void audio_async::get(int ms, std::vector<float> & result) {
-    if (!m_dev_id_in) {
-        fprintf(stderr, "%s: no audio device to get audio from!\n", __func__);
-        return;
-    }
+    // if (!m_dev_id_in) {
+    //     fprintf(stderr, "%s: no audio device to get audio from!\n", __func__);
+    //     return;
+    // }
 
     if (!m_running) {
         fprintf(stderr, "%s: not running!\n", __func__);

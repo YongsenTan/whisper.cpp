@@ -14,6 +14,12 @@ if (WHISPER_SDL2)
     message(STATUS "SDL2_LIBRARIES    = ${SDL2_LIBRARIES}")
 endif()
 
+
+# # ALSA
+# find_package(ALSA REQUIRED)
+# include_directories(${ALSA_LIBRARY})
+# list(APPEND COMMON_EXTRA_LIBS ${ALSA_INCLUDE_DIR})
+
 # common
 
 set(TARGET common)
@@ -80,6 +86,8 @@ if (WHISPER_SDL2)
 
     target_include_directories(${TARGET} PUBLIC  ${SDL2_INCLUDE_DIRS})
     target_link_libraries     (${TARGET} PRIVATE ${SDL2_LIBRARIES})
+    # target_include_directories(${TARGET} PUBLIC  ${SDL2_INCLUDE_DIRS} ${ALSA_INCLUDE_DIR})
+    # target_link_libraries     (${TARGET} PRIVATE ${SDL2_LIBRARIES} ${ALSA_LIBRARY})
 
     set_target_properties(${TARGET} PROPERTIES POSITION_INDEPENDENT_CODE ON)
     set_target_properties(${TARGET} PROPERTIES FOLDER "libs")
@@ -107,6 +115,7 @@ else()
     add_subdirectory(quantize)
     if (WHISPER_SDL2)
         add_subdirectory(stream)
+        add_subdirectory(speaker)
         add_subdirectory(command)
         add_subdirectory(talk-llama)
         add_subdirectory(lsp)
