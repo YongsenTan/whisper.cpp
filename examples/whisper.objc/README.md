@@ -13,7 +13,7 @@ https://user-images.githubusercontent.com/1991296/204126266-ce4177c6-6eca-4bd9-b
 
 This example uses the whisper.xcframework which needs to be built first using the following command:
 ```bash
-./build_xcframework.sh
+./build-xcframework.sh
 ```
 
 A model is also required to be downloaded and can be done using the following command:
@@ -30,4 +30,6 @@ mkdir models/ggml-base.en-encoder.mlmodelc
 
 Follow the [`Core ML support` section of readme](../../README.md#core-ml-support) to convert the model.
 That is all the needs to be done to use the Core ML model in the app. The converted model is a
-resource in the project and will be used if it is available.
+resource in the project and will be used if it is available. Note that the Core ML model is only
+used for the encoder, the decoder which is in the ggml model is still required so both need to
+be available.
