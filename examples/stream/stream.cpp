@@ -37,6 +37,7 @@ struct whisper_params {
     bool save_audio    = false; // save audio to wav file
     bool use_gpu       = true;
     bool flash_attn    = false;
+    bool no_prints     = true;
 
     std::string language  = "en";
     std::string model     = "models/ggml-base.en.bin";
@@ -74,7 +75,8 @@ static bool whisper_params_parse(int argc, char ** argv, whisper_params & params
         else if (arg == "-sa"   || arg == "--save-audio")    { params.save_audio    = true; }
         else if (arg == "-ng"   || arg == "--no-gpu")        { params.use_gpu       = false; }
         else if (arg == "-fa"   || arg == "--flash-attn")    { params.flash_attn    = true; }
-
+        else if (arg == "-np"   || arg == "--no-prints  ")   { params.no_prints     = true; }
+        else if (arg == "-nt"   || arg == "--no-timestamps") { params.no_timestamps = true; }
         else {
             fprintf(stderr, "error: unknown argument: %s\n", arg.c_str());
             whisper_print_usage(argc, argv, params);
@@ -112,8 +114,11 @@ void whisper_print_usage(int /*argc*/, char ** argv, const whisper_params & para
     fprintf(stderr, "  -sa,      --save-audio    [%-7s] save the recorded audio to a file\n",              params.save_audio ? "true" : "false");
     fprintf(stderr, "  -ng,      --no-gpu        [%-7s] disable GPU inference\n",                          params.use_gpu ? "false" : "true");
     fprintf(stderr, "  -fa,      --flash-attn    [%-7s] flash attention during inference\n",               params.flash_attn ? "true" : "false");
+    fprintf(stderr, "  -np,       --no-prints         [%-7s] do not print anything other than the results\n",   params.no_prints ? "true" : "false");
     fprintf(stderr, "\n");
 }
+
+static void cb_log_disable(enum ggml_log_level , const char * , void * ) { }
 
 int main(int argc, char ** argv) {
     whisper_params params;
@@ -139,7 +144,6 @@ int main(int argc, char ** argv) {
     params.max_tokens     = 0;
 
     // init audio
-
     audio_async audio(params.length_ms);
     if (!audio.init(params.capture_id, WHISPER_SAMPLE_RATE)) {
         fprintf(stderr, "%s: audio.init() failed!\n", __func__);
@@ -148,10 +152,15 @@ int main(int argc, char ** argv) {
 
     audio.resume();
 
+    if (params.no_prints) {
+        whisper_log_set(cb_log_disable, NULL);
+    }
     // whisper init
     if (params.language != "auto" && whisper_lang_id(params.language.c_str()) == -1){
         fprintf(stderr, "error: unknown language '%s'\n", params.language.c_str());
-        whisper_print_usage(argc, argv, params);
+        if(!params.no_prints){
+            whisper_print_usage(argc, argv, params);
+        }
         exit(0);
     }
 
@@ -169,7 +178,7 @@ int main(int argc, char ** argv) {
     std::vector<whisper_token> prompt_tokens;
 
     // print some info about the processing
-    {
+    if(!params.no_prints){
         fprintf(stderr, "\n");
         if (!whisper_is_multilingual(ctx)) {
             if (params.language != "en" || params.translate) {
@@ -222,8 +231,11 @@ int main(int argc, char ** argv) {
 
         wavWriter.open(filename, WHISPER_SAMPLE_RATE, 16, 1);
     }
-    printf("[Start speaking]\n");
-    fflush(stdout);
+
+    if(!params.no_prints){
+        printf("[Start speaking]\n");
+        fflush(stdout);
+    }
 
     auto t_last  = std::chrono::high_resolution_clock::now();
     const auto t_start = t_last;
@@ -337,7 +349,7 @@ int main(int argc, char ** argv) {
 
             // print result;
             {
-                if (!use_vad) {
+                if (!use_vad && !params.no_prints) {
                     printf("\33[2K\r");
 
                     // print long empty line to clear the previous line
@@ -348,9 +360,11 @@ int main(int argc, char ** argv) {
                     const int64_t t1 = (t_last - t_start).count()/1000000;
                     const int64_t t0 = std::max(0.0, t1 - pcmf32.size()*1000.0/WHISPER_SAMPLE_RATE);
 
-                    printf("\n");
-                    printf("### Transcription %d START | t0 = %d ms | t1 = %d ms\n", n_iter, (int) t0, (int) t1);
-                    printf("\n");
+                    if(!params.no_prints){
+                        printf("\n");
+                        printf("### Transcription %d START | t0 = %d ms | t1 = %d ms\n", n_iter, (int) t0, (int) t1);
+                        printf("\n");
+                    }
                 }
 
                 const int n_segments = whisper_full_n_segments(ctx);
@@ -389,7 +403,7 @@ int main(int argc, char ** argv) {
                     fout << std::endl;
                 }
 
-                if (use_vad) {
+                if (use_vad && !params.no_prints) {
                     printf("\n");
                     printf("### Transcription %d END\n", n_iter);
                 }
