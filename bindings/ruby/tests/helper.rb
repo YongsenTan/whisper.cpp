@@ -6,9 +6,9 @@ class TestBase < Test::Unit::TestCase
   AUDIO = File.join(__dir__, "..", "..", "..", "samples", "jfk.wav")
 
   class << self
-    attr_reader :whisper
+    def whisper
+      return @whisper if @whisper
 
-    def startup
       @whisper = Whisper::Context.new("base.en")
       params = Whisper::Params.new
       params.print_timestamps = false
@@ -20,5 +20,16 @@ class TestBase < Test::Unit::TestCase
 
   def whisper
     self.class.whisper
+  end
+
+  module BuildOptions
+    load "ext/options.rb", self
+    Options.include self
+
+    def enable_config(name)
+    end
+
+    def arg_config(name)
+    end
   end
 end
